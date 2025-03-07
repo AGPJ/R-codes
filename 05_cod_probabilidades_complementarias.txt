@@ -1,0 +1,84 @@
+rm(list=ls())
+
+inicio=Sys.time()
+
+require(openxlsx)
+
+setwd("C:/Users/ialbarra/Documents/Mis ficheros/FICHEROS CREADOS/CLASES/ALCALA/DOCTORADO/00 Fernando Vega/ART 3")
+
+
+#####################################################
+### Creación del directorio para las probabilidades
+#####################################################
+
+if(!dir.exists("probabilidades")) dir.create("probabilidades") 
+
+
+##################################################################
+### Elementos necesarios para la determinación de los parámetros
+##################################################################
+
+wRV=seq(0,1,by=0.01)
+nomdir=paste0("RV_",format(wRV,2))
+ld=length(nomdir)
+
+nomlim=c(paste0("prob_r_",seq(0,0.05,by=0.01),"_comple"),"prob_DP_comple")
+ln=length(nomlim)
+
+H=1:20
+lh=length(H)
+
+cc=read.xlsx("01 carteras.xlsx")     #### cc = carteras creadas
+nc=nrow(cc)                          #### nc = número de carteras      
+
+
+###########################################################
+### Construcción de las tablas con las probabilidades
+### obtenidas en la ejecución anterior
+### Se almacenan en tantos ficheros como límites se usan
+##########################################################  
+
+AP=list(NULL)   #### se crean los arrays que se utilizarán a continuación  (AP = array de probabilidad)
+
+for(l in 1:ln) {
+	
+	nl=paste0("05 ",nomlim[l],".xlsx")
+	libro=if(!file.exists(nomlim[l])) createWorkbook() else loadWorkbook(nomlim[l])   ### <---libro de excel a crear
+	HL=sheets(libro)
+
+
+	for(d in 1:ld) {
+		setwd(nomdir[d])
+		d0=read.xlsx(paste0("04 betas composicionales_",format(wRV,2)[d],".xlsx"),sheet=2*l)
+		d1=as.matrix(d0[,-1])
+		AP[[l]]=array(0,dim=c(nc,lh,ld))
+		colnames(AP[[l]])=paste0("H_",H)
+		rownames(AP[[l]])=paste0("cartera_",1:nc)
+		AP[[l]][,,d]=1-d1
+
+		#### Almacenamiento en Excel
+		hoja=nomdir[d]
+		if(!(hoja %in% HL)) addWorksheet(libro,hoja)
+		writeData(libro,sheet=hoja,AP[[l]][,,d],rowNames=T,colNames=T,startRow=5)
+
+		#### Vuelta al directorio raíz		
+		setwd("..")
+		}
+	
+	### Grabación en fichero en el directorio creado al efecto
+	
+	#setwd("probabilidades")
+	saveWorkbook(libro,nl,overwrite=T)
+	#setwd("..")
+
+	}
+
+
+
+final=Sys.time()
+(duración=final-inicio)
+
+
+
+
+	

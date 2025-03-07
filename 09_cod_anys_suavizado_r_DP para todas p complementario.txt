@@ -1,0 +1,97 @@
+rm(list=ls())
+
+inicio=Sys.time()
+
+require(openxlsx)
+
+setwd("C:/Users/ialbarra/Documents/Mis ficheros/FICHEROS CREADOS/CLASES/ALCALA/DOCTORADO/00 Fernando Vega/ART 3")
+
+
+#######################################
+### Parámetros y matriz de resultados
+#######################################
+
+wRV=seq(0,1,by=0.01)
+lw=length(wRV)
+
+prob=seq(0,1,by=0.01)
+lp=length(prob)
+
+casos=c("mínimo","medio","máximo")
+lc=length(casos)
+
+AR=array(0,dim=c(lw,lp,lc))
+dimnames(AR)=list(paste0("RV_",format(wRV,2)),paste0("p_",prob),casos)
+
+
+#########################################
+#### Ficheros con información de partida 
+#########################################
+
+nfi=paste0("08 anys necesarios para batir el objetivo ",casos," para todas p complementario.xlsx")   #### nfi = nombre del fichero con la información de partida
+
+
+##############################
+#### Suavizado mediante LOESS
+##############################
+
+sp=seq(0.25,0.9,by=0.05)
+ls=length(sp)
+
+min=0
+max=21
+
+
+for(l in 1:lc) {
+	X0=read.xlsx(nfi[l],sheet=2)
+	C0=match(colnames(AR[,,1]),colnames(X0))
+	X1=X0[,C0]
+	c1=apply(X1,2,sum)
+	C1=which(c1>0)
+	X2=X1[,C1]
+
+	for(k in C1) {
+		valor=numeric()
+
+		for(j in 1:ls) {
+			M1=loess(as.numeric(X1[,k])~wRV,span=sp[j],degree=1)
+			result=predict(M1,data.frame(wRV=wRV),se=T)
+			valor[j]=result$residual.scale
+				}
+		mindt=min(valor)   ### valor mínimo de la d.t.
+		x=sp[valor==mindt] ### a partir de los valores de la d.t. se busca el span óptimo
+		minx=mean(x)
+
+		M1opt=loess(as.numeric(X1[,k])~wRV,span=minx,degree=1)   ### estimación del loess asociado al span óptimo
+		result2=predict(M1opt,data.frame(wRV=wRV),se=T)
+		estim1=ifelse(result2$fit<min,0,result2$fit)
+		estim2=ifelse(estim1>max,max,estim1)
+		AR[,k,l]=estim2
+		}
+	}
+
+
+################################
+#### Almacenamiento en Excel
+################################
+
+libro=createWorkbook()
+
+for(i in 1:lc) {
+	addWorksheet(libro,sheet=casos[i])
+	writeData(libro,sheet=casos[i],AR[,,i],rowNames=T,startRow=5)
+	}
+
+saveWorkbook(libro,"09 anys suavizados r_DP para todas p complementario.xlsx",overwrite=T)
+
+
+
+
+
+final=Sys.time()
+(duración=final-inicio)
+
+		
+
+
+

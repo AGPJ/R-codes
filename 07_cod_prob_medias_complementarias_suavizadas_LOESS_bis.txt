@@ -1,0 +1,115 @@
+rm(list=ls())
+
+inicio=Sys.time()
+
+require(openxlsx)
+
+setwd("C:/Users/ialbarra/Documents/Mis ficheros/FICHEROS CREADOS/CLASES/ALCALA/DOCTORADO/00 Fernando Vega/ART 3")
+
+
+##################################################################
+### Elementos necesarios para la determinación de los parámetros
+##################################################################
+
+wRV=seq(0,1,by=0.01)
+casos=paste0("RV_",format(wRV,2))
+lc=length(casos)
+
+nomlim=c(paste0("r_",seq(0,0.05,by=0.01)),"DP")
+ln=length(nomlim)
+
+nomfic=paste0(c(paste0("05 prob_r_",seq(0,0.05,by=0.01)),"05 prob_DP"),"_comple.xlsx")     #### nomfic = nombre de los ficheros de los que se sacará la información
+lf=length(nomfic)
+
+H=1:20
+lh=length(H)
+
+
+##############################################
+### libro y hojas para almacenar el resultado
+##############################################
+
+nlm="07 probabilidades medias complementarias suavizadas por limite bis.xlsx"         ### nlm = nombre del libro donde se almacenarán las probabilidades medias
+nls="07 probabilidades superiores complementarias suavizadas por limite bis.xlsx"     ### nls = nombre del libro donde se almacenarán las probabilidades superiores
+nli="07 probabilidades inferiores complementarias suavizadas por limite bis.xlsx"     ### nli = nombre del libro donde se almacenarán las probabilidades inferiores
+
+librom=createWorkbook()
+libros=createWorkbook()
+libroi=createWorkbook()
+HLm=sheets(librom)
+HLs=sheets(libros)
+HLi=sheets(libroi)
+
+max=1
+min=0
+
+sp=seq(0.25,0.9,by=0.05)
+ls=length(sp)
+
+alfa=.05
+
+for(f in 1:lf) {
+	MMS=matrix(0,lc,lh)                    #### MMS = matriz de medias suavizadas por LOESS
+	rownames(MMS)=casos
+	colnames(MMS)=paste("H_",H)
+	d0=read.xlsx("06 probabilidades medias complementarias por limite.xlsx",sheet=f)
+	d1=d0[,-1]
+
+	MLI=matrix(0,lc,lh)
+	rownames(MLI)=rownames(MMS)
+	colnames(MLI)=colnames(MMS)
+
+	MLS=matrix(0,lc,lh)
+	rownames(MLS)=rownames(MMS)
+	colnames(MLS)=colnames(MMS)
+
+	for(i in 1:nrow(MMS)) {
+
+		valor=numeric()
+
+		for(j in 1:ls) {
+			M1=loess(as.numeric(d1[i,])~H,span=sp[j],degree=1)
+			result=predict(M1,data.frame(H=H),se=T)
+			valor[j]=result$residual.scale
+				}
+		mindt=min(valor)   ### valor mínimo de la d.t.
+		x=sp[valor==mindt] ### a partir de los valores de la d.t. se busca el span óptimo
+		minx=mean(x)
+
+		M1opt=loess(as.numeric(d1[i,])~H,span=minx,degree=1)   ### estimación del loess asociado al span óptimo
+		result2=predict(M1opt,data.frame(H=H),se=T)
+		MMS[i,]=result2$fit
+
+		ampli=qt(1-alfa/2,result2$df)*result2$se.fit     
+		MLS[i,]=result2$fit+ampli      
+		MLI[i,]=result2$fit-ampli
+
+			}
+
+	#### corrección de valores ilógicos (MLS>1 o MLI<0)
+	is=which(MLS>1)
+	if(sum(is)>0) MLS[is]=1
+
+	ii=which(MLI<0,arr.ind=T)
+	if(sum(ii)>0) MLI[ii]=0
+
+	#### Almacenamiento en Excel
+	hoja=nomfic[f]
+	if(!(hoja %in% HLm)) addWorksheet(librom,nomfic[f])
+	writeData(librom,sheet=nomfic[f],MMS,rowNames=T,startRow=5)
+	if(!(hoja %in% HLs)) addWorksheet(libros,nomfic[f])
+	writeData(libros,sheet=nomfic[f],MLS,rowNames=T,startRow=5)
+	if(!(hoja %in% HLi)) addWorksheet(libroi,nomfic[f])
+	writeData(libroi,sheet=nomfic[f],MLI,rowNames=T,startRow=5)
+		}
+	
+saveWorkbook(librom,nlm,overwrite=T)
+saveWorkbook(libros,nls,overwrite=T)
+saveWorkbook(libroi,nli,overwrite=T)
+
+
+
+final=Sys.time()
+(duración=final-inicio)
+
+	
