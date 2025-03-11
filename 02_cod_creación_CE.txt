@@ -2,7 +2,7 @@ rm(list=ls())
 
 inicio=Sys.time()
 
-setwd("C:/Users/ialbarra/Documents/Mis ficheros/FICHEROS CREADOS/CLASES/ALCALA/DOCTORADO/00 Fernando Vega/ART 3")
+setwd("")   ### dirección donde están los datos
 
 #################################
 ### Creación de los directorios
