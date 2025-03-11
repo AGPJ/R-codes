@@ -2,7 +2,7 @@ rm(list=ls())
 
 (inicio=Sys.time())
 
-setwd("C:/Users/Ialbarra/Documents/Mis ficheros/FICHEROS CREADOS/CLASES/ALCALA/DOCTORADO/00 Fernando Vega/ART 3")  ### <---- directorio
+setwd("")   ### dirección donde están los datos
 
 
 ##########################
