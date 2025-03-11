@@ -4,7 +4,7 @@ inicio=Sys.time()
 
 require(openxlsx)
 
-setwd("C:/Users/ialbarra/Documents/Mis ficheros/FICHEROS CREADOS/CLASES/ALCALA/DOCTORADO/00 Fernando Vega/ART 3")
+setwd("")   ### dirección donde están los datos
 
 ###########################################################################
 #### Gráfico de los perfiles de probabilidad para distintos valores de w
