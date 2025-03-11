@@ -18,7 +18,7 @@ inicio=Sys.time()
 
 ### lo primero es establecer el directorio en el que se incluirán los datos (y los resultados, aunque se puede llevar a otro)
 
-setwd("C:/Users/Ialbarra/Documents/Mis ficheros/FICHEROS CREADOS/CLASES/ALCALA/DOCTORADO/00 Fernando Vega/ART 3")   
+setwd("")   ### dirección donde están los datos
 
 
 ##########################################################
