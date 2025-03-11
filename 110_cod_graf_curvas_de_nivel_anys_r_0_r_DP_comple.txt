@@ -1,0 +1,72 @@
+rm(list=ls())
+
+inicio=Sys.time()
+
+require(openxlsx)
+
+setwd("")   ### directorio con los datos
+
+
+#####################################
+#### Gráfico de las curvas de nivel
+#### para años y r = 0%
+#####################################
+
+
+datos=read.xlsx("09 anys suavizados r_0 para todas p complementario.xlsx",sheet=2)   ### es la hoja 2 porqaue es la de los valores medios
+datos=datos[,-1]
+
+peso=seq(0,1,by=0.01)
+prob=peso
+
+anys=as.matrix(datos)
+
+par(mai=c(1.25,1.5,1,1))
+
+filled.contour(x=peso,y=prob[60:101],z=anys[,60:101], color.palette = terrain.colors,
+	#plot.title=title(main="# Years \n (for all values of w)",
+	plot.title=title(main="",
+		xlab="Weight of equities in portfolio",ylab="Probability of beating the target",cex.main=1.60,cex.lab=1.25),
+	plot.axes={axis(1,seq(0,1,by=0.1),las=1,tck=0.02)
+		   axis(2,at=seq(0,1,by=0.10),las=1,tck=0.02)
+		   contour(peso,prob[60:101],anys[,60:101],add=T,lwd=1,labcex=1.25)},
+	key.title=title(main="#Years",cex.main=1),
+	key.axes=axis(4,at=0:15,labels=0:15))
+	
+dev.copy(pdf,file="11_graf_curvas_nivel_anys_r_0_comple.pdf",width=15,height=8.5)
+dev.off()
+
+#####################################
+#### Gráfico de las curvas de nivel
+#### para años y r = DP
+#####################################
+
+
+datos=read.xlsx("09 anys suavizados r_DP para todas p complementario.xlsx",sheet=2)   ### es la hoja 2 porqaue es la de los valores medios
+datos=datos[,-1]
+
+peso=seq(0,1,by=0.01)
+prob=peso
+
+anys=as.matrix(datos)
+
+par(mai=c(1.25,1.5,1,1))
+
+filled.contour(x=peso,y=prob,z=anys, color.palette = terrain.colors,
+	#plot.title=title(main="# Years \n (for all values of w)",
+	plot.title=title(main="",
+		xlab="Weight of equities in portfolio",ylab="Probability of beating the target",cex.main=1.60,cex.lab=1.25),
+	plot.axes={axis(1,seq(0,1,by=0.1),las=1,tck=0.02)
+		   axis(2,at=seq(0,1,by=0.10),las=1,tck=0.02)
+		   contour(peso,prob,anys,add=T,lwd=1,labcex=1.25)},
+	key.title=title(main="#Years",cex.main=1),
+	key.axes=axis(4,at=1:21,labels=1:21))
+	
+
+dev.copy(pdf,file="11_graf_curvas_nivel_anys_r_DP_comple.pdf",width=15,height=8.5)
+dev.off()
+
+
+
+final=Sys.time()
+(duración=final-inicio)

@@ -1,0 +1,171 @@
+##################################################
+##################################################
+## Paso 1: 
+## Generación de ponderaciones aleatorias
+## Restricción: 50% en RF y 50% en RV
+## Cada uno de los activos considerados dentro
+## de cada bloque puede oscilar entre el
+## 0% y el 50%
+##################################################
+##################################################
+
+
+rm(list=ls())
+
+inicio=Sys.time()
+
+
+
+### lo primero es establecer el directorio en el que se incluirán los datos (y los resultados, aunque se puede llevar a otro)
+
+setwd("")   ### directorio con los datos   
+
+
+##########################################################
+### Creación de la tabla con los rangos máximos y mínimos
+##########################################################
+
+RF = .5          ### peso de la renta fija
+RV = 1-RF        ### peso de la renta variable
+
+
+rangos=matrix(0,2,7)
+colnames(rangos)=c("PD","corporate","local","Europe","USA","Japan","Emerging")    #### el índice local considerado es el IBEX-35
+rownames(rangos)=c("min","max")
+rangos[2,]=RV
+rangos=data.frame(rangos)
+
+
+#########################################
+### Combinaciones de cartera admisibles
+#########################################
+
+#### Renta Fija
+
+#wRF=.5      #### WRF = weight Renta Fija (peso en cartera)
+
+PD=seq(min(rangos$PD),max(rangos$PD),by=.01)
+Corp=seq(min(rangos$corporate),max(rangos$corporate),by=.01)
+A=expand.grid(PD,Corp)
+colnames(A)=c("PD","Corp")
+A$suma=round(apply(A,1,sum),4)
+#a=which(A$suma==wRF)
+a=which(A$suma==RF)
+A1=A[a,]
+
+
+#### Renta variable
+
+#wRV=1-wRF
+#iRV=0.0025            #### iRV = incremento aplicado en Renta variable
+iRV=0.01               #### iRV = incremento aplicado en Renta variable
+
+LOC=seq(min(rangos$local),max(rangos$local),by=2*iRV)
+EUR=seq(min(rangos$Europe),max(rangos$Europe),by=2*iRV)
+USA=seq(min(rangos$USA),max(rangos$USA),by=2*iRV)
+JAP=seq(min(rangos$Japan),max(rangos$Japan),by=2*iRV)
+EME=seq(min(rangos$Emerging),max(rangos$Emerging),by=2*iRV)
+
+B=expand.grid(LOC,EUR,USA,JAP,EME)
+colnames(B)=c("LOC","EUR","USA","JAP","EME")
+#B$suma=round(apply(B,1,sum),4)
+#b=which(B$sum==wRV)
+suma=round(apply(B,1,sum),4)
+b=which(suma==RV)
+B1=B[b,]
+
+
+##### Combinaciones finales de cartera
+
+V1=1:nrow(A1)
+V2=1:nrow(B1)
+
+C=expand.grid(V1,V2)
+colnames(C)=c("RF","RV")
+
+X1=A1[C[,1],1:2]
+X2=B1[C[,2],1:5]
+
+CM=cbind(X1,X2) 
+
+
+########################################
+########################################
+## Paso 2:
+## A partir de las carteras anteriores
+## se seleccionan las que tienen todas
+## sus componentes positivas
+#######################################
+#######################################
+
+pos=which(apply(CM,1, function(x) sum(x>0))==7)
+CMS=CM[pos,]
+
+
+#### Selección aleatoria de carteras
+
+B = 10000
+
+num=sample(1:nrow(CMS),B,rep=F)
+
+CS=CMS[num,]
+rownames(CS)=paste0("Cartera_",1:B)
+
+
+###################################################
+###################################################
+## Paso 3:
+## A partir de las carteras seleccionadas
+## para un cierto peso de RV (50%)
+## se calculan las demás sin más que multiplicar
+## sus componentes por RV'/.5 y 
+## lo mismo en la RF: RF'/.5, de forma
+## que al final RF'+RV' = 1
+##################################################
+##################################################
+
+wRV=seq(0,1,by=0.01)
+wRF=1-wRV
+lw=length(wRV)
+
+TCS=array(0,dim=c(nrow(CS),ncol(CS),lw))        ##### TCS = total de carteras seleccionadas
+rownames(TCS)=rownames(CS)
+colnames(TCS)=colnames(CS)
+
+for(i in 1:lw) {
+	TCS[,1:2,i]=as.matrix(CS[,1:2])*wRF[i]/.5
+	TCS[,3:7,i]=as.matrix(CS[,3:7])*wRV[i]/.5
+	}
+
+
+#######################################
+#### Almacenamiento en Excel
+#######################################
+
+
+require(openxlsx)
+
+libro=createWorkbook()
+HL=sheets(libro)
+
+nombres=paste0("RV_",wRV)
+ln=length(nombres)
+
+for(i in 1:ln) {
+	if(!(nombres[i] %in% HL)) addWorksheet(libro,nombres[i]) else next
+	writeData(libro,sheet=nombres[i],TCS[,,i],rowNames=T,colNames=T,startRow=5)
+	}
+
+saveWorkbook(libro,"01 carteras.xlsx",overwrite=T)
+
+
+
+
+
+
+final=Sys.time()
+
+
+
+(duración=final-inicio)
+
