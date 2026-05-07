@@ -1,0 +1,62 @@
+rm(list=ls())
+
+inicio=Sys.time()
+
+require(openxlsx)
+
+setwd("C:/Users/ialbarra/Documents/Mis ficheros/FICHEROS CREADOS/ARTICULOS/CIENTÍFICOS/CARTERAS/04 RIBF")
+
+##################################
+### Gráficos para años suavizados
+##################################
+
+casos=c("mínimo","medio","máximo")
+lc=length(casos)
+
+prob=c(0.75,0.90,0.95,0.99)
+lp=length(prob)
+
+dmin=read.xlsx("09 anys suavizados complementario.xlsx",sheet=casos[1])
+dmin=dmin[,-1]
+dmed=read.xlsx("09 anys suavizados complementario.xlsx",sheet=casos[2])
+dmed=dmed[,-1]
+dmax=read.xlsx("09 anys suavizados complementario.xlsx",sheet=casos[3])
+dmax=dmax[,-1]
+
+datos=cbind(dmin,dmed,dmax)
+colnames(datos)=paste0(rep(colnames(dmin),lc),rep(casos,each=ncol(dmin)))
+
+X=seq(0,1,by=0.01)
+
+MD=list()
+
+for(p in 1:lp) {
+	MD[[p]]=matrix(0,length(X),1+lc)
+	MD[[p]][,1]=X                  #### pesos de la RV
+	for(j in 1:lc) MD[[p]][,j+1]=datos[,4*j-(lp-p)]
+		}
+
+
+
+par(mfrow=c(2,2))
+
+for(p in 1:lp) {
+	Y=MD[[p]][,3]
+	plot(X,Y,lwd=4,col=2,type="l",main=paste0("probability = ",format(round(prob[p],2),nsmall=2)),
+		xaxt="n",xaxs="i",yaxt="n",yaxs="i",bty="n",ylim=c(0,20),ylab="#Years",xlab=expression(paste("Weight of equities in portfolio (", omega, ")")),
+		cex.main=1.75,las=1,cex.lab=1.25)
+	axis(1, at=c(0,seq(0,1,by=0.1)), labels = c(0,seq(0,1,by=0.1)),tck=0.02,cex.axis=1.25) 
+	axis(2, at=seq(0,25,by=5), labels=seq(0,25,by=5),las=1,tck=0.02,cex.axis=1.25)
+	lines(X,MD[[p]][,2],lwd=2,col=2,lty=3)
+	lines(X,MD[[p]][,4],lwd=2,col=2,lty=3)
+
+	dev.copy(pdf,file="10 graf_anys_suavizados_r_0_comple.pdf",width=12,height=8.5)
+	dev.off()
+	}
+
+par(mfrow=c(1,1))
+
+
+
+final=Sys.time()
+(duración=final-inicio)

@@ -1,0 +1,88 @@
+rm(list=ls())
+
+inicio=Sys.time()
+
+require(openxlsx)
+
+setwd("C:/Users/ialbarra/Documents/Mis ficheros/FICHEROS CREADOS/ARTICULOS/CIENTÍFICOS/CARTERAS/04 RIBF")
+
+
+##################################################################
+### Elementos necesarios para la determinación de los parámetros
+##################################################################
+
+wRV=seq(0,1,by=0.01)
+casos=paste0("RV_",format(wRV,2))
+lc=length(casos)
+
+nomlim=c(paste0("r_",seq(0,0.05,by=0.01)),"DP")
+ln=length(nomlim)
+
+#nomfic=paste0(c(paste0("05 prob_r_",seq(0,0.05,by=0.01)),"05 prob_DP"),"_comple.xlsx")     #### nomfic = nombre de los ficheros de los que se sacará la información
+nomfic=paste0(paste0("05 prob_r_",c(0,"inflacion","DP")),"_comple.xlsx")
+lf=length(nomfic)
+
+H=1:20
+lh=length(H)
+
+
+#################################################
+### libros y hojas para almacenar los resultados
+#################################################
+
+alfa=0.05      #### alfa = nivel de probabilidad asociado a los intervalos a construir
+
+nlinf=paste0("06 probabilidades complementarias por límite al ",100*alfa/2,"%.xlsx")         ### nlinf = nombre del libro donde se almacenarán los resultados para el lim. inf. del intervalo
+nlsup=paste0("06 probabilidades complementarias por límite al ",100*(1-alfa/2),"%.xlsx")     ### nlsup = nombre del libro donde se almacenarán los resultados para el lim. sup. del intervalo
+
+
+libroi=createWorkbook()
+HLi=sheets(libroi)
+
+for(f in 1:lf) {
+	MM=matrix(0,lc,lh)
+	rownames(MM)=casos
+	colnames(MM)=paste("H_",H)
+	for(w in 1:lc)  {
+		d0=read.xlsx(nomfic[f],sheet=w)
+		d1=d0[,-1]
+		MM[w,]=as.numeric(apply(d1,2,function(x) quantile(x,prob=alfa/2)))
+		}
+
+	### Almacenamiento en Excel
+
+	addWorksheet(libroi,nomfic[f])
+	writeData(libroi,sheet=nomfic[f],MM,rowNames=T,startRow=5)
+	}
+
+saveWorkbook(libroi,nlinf,overwrite=T)
+
+
+libros=createWorkbook()
+HLs=sheets(libros)
+
+for(f in 1:lf) {
+	MM=matrix(0,lc,lh)
+	rownames(MM)=casos
+	colnames(MM)=paste("H_",H)
+	for(w in 1:lc)  {
+		d0=read.xlsx(nomfic[f],sheet=w)
+		d1=d0[,-1]
+		MM[w,]=as.numeric(apply(d1,2,function(x) quantile(x,prob=1-alfa/2)))
+		}
+
+	### Almacenamiento en Excel
+
+	addWorksheet(libros,nomfic[f])
+	writeData(libros,sheet=nomfic[f],MM,rowNames=T,startRow=5)
+	}
+
+saveWorkbook(libros,nlsup,overwrite=T)
+
+
+
+
+final=Sys.time()
+(duración=final-inicio)
+
+
